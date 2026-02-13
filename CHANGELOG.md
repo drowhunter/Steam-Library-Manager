@@ -4,7 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
-## [1.6.0.4] - 2020-12-7
+## [1.7.2.0] - 2025-03-03
+
+### Fixed
+
+* Missing confrmation dialog for "Delete all games in library" ([#107](https://github.com/RevoLand/Steam-Library-Manager/issues/107))
+* Bumps [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) from 12.0.3 to 13.0.2.
+
+## [1.7.1.0] - 2023-02-26
+
+### Fixed
+
+* Steam library detection ([#105](https://github.com/RevoLand/Steam-Library-Manager/issues/105))
+
+## [1.7.0.0] - 2022-12-18
+
+### Fixed
+
+* Steam library creation ([#101](https://github.com/RevoLand/Steam-Library-Manager/issues/101))
+* Steam library deletion ([#103](https://github.com/RevoLand/Steam-Library-Manager/issues/103))
+
+## [1.6.0.5] - 2021-01-01
+
+### Fixed
+
+* Offline libraries being shown in updating state.
+
+## [1.6.0.4] - 2020-12-07
 
 ### Changed
 
@@ -14,7 +40,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 * The specified executable is not a valid application for this OS platform ([#88](https://github.com/RevoLand/Steam-Library-Manager/issues/88))
 
-## [1.6.0.3] - 2019-11-3
+## [1.6.0.3] - 2019-11-03
 
 ### Fixed
 

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using Directory = Alphaleonis.Win32.Filesystem.Directory;
 using DirectoryInfo = Alphaleonis.Win32.Filesystem.DirectoryInfo;
 using File = Alphaleonis.Win32.Filesystem.File;
@@ -53,6 +54,8 @@ namespace Steam_Library_Manager.Definitions
                         MessageBox.Show(Framework.StringFormat.Format(
                             Functions.SLM.Translate(nameof(Properties.Resources.SteamAppsFolderNotExists)),
                             new { SteamAppsFolderFullPath = DirectoryList["SteamApps"].FullName }));
+
+                        IsUpdatingAppList = false;
                         return;
                     }
                 }
@@ -212,6 +215,20 @@ namespace Steam_Library_Manager.Definitions
                     break;
 
                 case "deletelibraryslm":
+                    if (Apps.Count == 0)
+                    {
+                        return;
+                    }
+
+                    var gamesWillBeDeletedWarning = await Main.FormAccessor.ShowMessageAsync("Warning!", $"When you proceed with this action, {Apps.Count} games in your library will be deleted", MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings
+                    {
+                        FirstAuxiliaryButtonText = Functions.SLM.Translate(nameof(Properties.Resources.DeleteLibraryWithoutMovingGames))
+                    }).ConfigureAwait(true);
+
+                    if (gamesWillBeDeletedWarning != MessageDialogResult.Affirmative)
+                    {
+                        return;
+                    }
 
                     foreach (SteamAppInfo App in Apps.ToList())
                     {
@@ -314,30 +331,47 @@ namespace Steam_Library_Manager.Definitions
 
                 await Functions.Steam.CloseSteamAsync().ConfigureAwait(true);
 
-                // Make a KeyValue reader
-                var keyValReader = new Framework.KeyValue();
-
-                // Read vdf file
-                keyValReader.ReadFileAsText(Global.Steam.VdfFilePath);
-
-                // Remove old library
-                keyValReader["Software"]["Valve"]["Steam"].Children.RemoveAll(x => x.Value == FullPath);
-
-                var i = 1;
-                foreach (var key in keyValReader["Software"]["Valve"]["Steam"].Children.FindAll(x => x.Name.Contains("BaseInstallFolder")))
-                {
-                    key.Name = $"BaseInstallFolder_{i}";
-                    i++;
-                }
-
-                // Update libraryFolders.vdf file with changes
-                keyValReader.SaveToFile(Global.Steam.VdfFilePath, false);
-
                 // Since this file started to interrupt us?
                 // No need to bother with it since config.vdf is the real deal, just remove it and Steam client will handle with some magic.
                 if (File.Exists(Path.Combine(Properties.Settings.Default.steamInstallationPath, "steamapps", "libraryfolders.vdf")))
                 {
                     File.Delete(Path.Combine(Properties.Settings.Default.steamInstallationPath, "steamapps", "libraryfolders.vdf"));
+                }
+
+                // Make a KeyValue reader
+                Framework.KeyValue keyValReader = new Framework.KeyValue();
+
+                if (File.Exists(Definitions.Global.Steam.LibraryFoldersPath))
+                {
+                    // Read vdf file
+                    keyValReader.ReadFileAsText(Definitions.Global.Steam.LibraryFoldersPath);
+
+                    keyValReader.Children.RemoveAll(x =>
+                    {
+                        if (x.Children.Count() == 0)
+                        {
+                            return true;
+                        }
+
+                        return x.Children.Any(children =>
+                        {
+                            if (children.Name != "path")
+                            {
+                                return false;
+                            }
+
+                            var libraryPath = children.Value;
+                            if (!libraryPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                            {
+                                libraryPath += Path.DirectorySeparatorChar;
+                            }
+
+                            return libraryPath == FullPath;
+                        });
+                    });
+
+                    // Update libraryFolders.vdf file with changes
+                    keyValReader.SaveToFile(Definitions.Global.Steam.LibraryFoldersPath, false);
                 }
 
                 Functions.Steam.RestartSteamAsync();
